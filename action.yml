@@ -1,0 +1,47 @@
+name: Local-docker-environment
+description: Run docker services, test them and then remove them
+inputs:
+  app-name:
+    description: Name of the Webapp
+    required: false
+  registry: 
+    description: Provides current name of the registry
+    required: true   
+  clean-branch-name: 
+    description: Branch name that was pushed to registry
+    required: true  
+  validatecodeonce:
+    description: Runs typing, linting, formatting check & unit and integration testing
+    required: false
+    default: None
+  multiple-server:
+    description: Runs typing, linting, formatting check & unit and integration testing for webapps with multiple server
+    required: false
+    default: None  
+
+runs:
+  using: "composite"
+  steps:
+    - name: Docker Up
+      run: ${{ github.action_path }}/scripts/DockerUp.sh ${{ inputs.app-name }}
+            ${{ inputs.registry }} ${{ inputs.clean-branch-name }}
+      shell: bash  
+
+    - name: Run single server tests
+      run: |
+        if [[ ${{ inputs.validatecodeonce }} != 'None' ]]; then
+            ${{ github.action_path }}/scripts/CodeTestsOnce.sh 
+        fi  
+      shell: bash  
+
+    - name: Run multiple server tests
+      run: |
+        if [[ ${{ inputs.multiple-server }} != 'None' ]]; then
+            ${{ github.action_path }}/scripts/CodeTestsMultiple.sh 
+        fi  
+      shell: bash  
+
+    - name: Docker Down
+      run: ${{ github.action_path }}/scripts/DockerDown.sh ${{ inputs.app-name }}
+            ${{ inputs.registry }} ${{ inputs.clean-branch-name }}
+      shell: bash  
